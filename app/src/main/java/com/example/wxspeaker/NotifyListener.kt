@@ -6,7 +6,6 @@ import android.service.notification.StatusBarNotification
 
 /**
  * 监听系统通知：只处理微信，把消息朗读出来。
- * 逻辑与 AutoX 脚本一致：
  *  - 语音消息 → "发来一条语音消息"
  *  - 媒体消息（整条正好是图片/视频/表情/文件/链接…）→ "收到一张图片"等
  *  - 纯标点 → 用中文念标点名称（连续相同压缩成数量）
@@ -25,9 +24,14 @@ class NotifyListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         if (sbn == null) return
         try {
+            val ex = sbn.notification.extras
+            val t = ex.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
+            val x = ex.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
+            // 调试：记录收到的通知（便于在 App 界面里查看）
+            LogStore.add(sbn.packageName + " ｜ " + t + " ｜ " + x)
             handle(sbn)
         } catch (e: Exception) {
-            // 忽略单条异常
+            LogStore.add("异常：" + e)
         }
     }
 

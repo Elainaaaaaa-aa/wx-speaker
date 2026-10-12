@@ -7,16 +7,19 @@ import java.util.Locale
 /** 系统语音合成（TTS）的封装 */
 object Speaker {
 
-    private var tts: TextToSpeech? = null
-    private var ready = false
+    @Volatile private var tts: TextToSpeech? = null
+    @Volatile private var ready = false
 
     fun init(ctx: Context) {
         if (tts != null) return
         tts = TextToSpeech(ctx.applicationContext) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.CHINESE
-                tts?.setSpeechRate(1.0f)
-                tts?.setPitch(1.0f)
+                try {
+                    tts?.language = Locale.CHINESE
+                    tts?.setSpeechRate(1.0f)
+                    tts?.setPitch(1.0f)
+                } catch (e: Exception) {
+                }
                 ready = true
             }
         }
