@@ -74,8 +74,8 @@ class MainActivity : Activity() {
     }
 
     private fun refreshLog() {
-        val list = LogStore.getAll()
-        logText.text = if (list.isEmpty()) "（还没收到任何通知）" else list.joinToString("\n\n")
+        val s = LogStore.getAll(this)
+        logText.text = if (s.isEmpty()) "（还没收到任何通知）" else s
     }
 
     private fun isNotificationAccessGranted(): Boolean {

@@ -6,11 +6,6 @@ import android.service.notification.StatusBarNotification
 
 /**
  * 监听系统通知：只处理微信，把消息朗读出来。
- *  - 语音消息 → "发来一条语音消息"
- *  - 媒体消息（整条正好是图片/视频/表情/文件/链接…）→ "收到一张图片"等
- *  - 纯标点 → 用中文念标点名称（连续相同压缩成数量）
- *  - 普通文字 → 直接读；正文里已带发送人名字时不重复念
- *  - 微信"[N条]"重复推送 → 去重
  */
 class NotifyListener : NotificationListenerService() {
 
@@ -27,11 +22,11 @@ class NotifyListener : NotificationListenerService() {
             val ex = sbn.notification.extras
             val t = ex.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
             val x = ex.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
-            // 调试：记录收到的通知（便于在 App 界面里查看）
-            LogStore.add(sbn.packageName + " ｜ " + t + " ｜ " + x)
+            // 调试：记录收到的通知（保存在本地，方便在 App 界面里查看）
+            LogStore.add(this, sbn.packageName + " ｜ " + t + " ｜ " + x)
             handle(sbn)
         } catch (e: Exception) {
-            LogStore.add("异常：" + e)
+            LogStore.add(this, "异常：" + e)
         }
     }
 
@@ -47,7 +42,7 @@ class NotifyListener : NotificationListenerService() {
         // 去掉“[N条]”前缀
         val core = text.replace(Regex("^\\[\\d+条\\]"), "")
 
-        // 去重：同一发送人的相同内容，短时间内只念一次
+        // 去重
         val now = System.currentTimeMillis()
         val last = lastSpoken[title]
         if (last != null && last.first == core && now - last.second < DEDUP_MS) return
@@ -61,12 +56,12 @@ class NotifyListener : NotificationListenerService() {
             return
         }
 
-        // 拆出正文（微信有时把发送人写进正文，避免重复念名字）
+        // 拆出正文
         val m = Regex("^([^:：]{1,24})[:：]([\\s\\S]*)$").find(core)
         val content = m?.groupValues?.get(2) ?: core
         val alreadyNamed = (m != null && m.groupValues[1] == title)
 
-        // ② 媒体消息（整条正好等于某个标志才算）
+        // ② 媒体消息
         val c = content.replace(Regex("\\s"), "")
         val media = MEDIA[c]
         if (media != null) {
