@@ -31,35 +31,42 @@
         android:id="@+id/btnAcc"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="② 开启「无障碍」（自动播语音用）" />
+        android:layout_marginTop="6dp"
+        android:text="② 开启「无障碍」（自动播语音）" />
+
+    <Button
+        android:id="@+id/btnOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="③ 允许「显示在其他应用上层」" />
 
     <Button
         android:id="@+id/btnStart"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:text="开始播报" />
 
     <Button
         android:id="@+id/btnStop"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:text="停止播报" />
 
     <Button
         android:id="@+id/btnTest"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="测试语音（点一下，应听到声音）" />
+        android:layout_marginTop="6dp"
+        android:text="测试语音" />
 
     <TextView
         android:id="@+id/ttsText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:textSize="12sp"
         android:textColor="#B00020"
         android:text="TTS状态：--" />
@@ -67,7 +74,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:textSize="13sp"
         android:textColor="#666666"
         android:text="最近收到的通知（调试用）:" />

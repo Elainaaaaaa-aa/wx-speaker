@@ -3,6 +3,7 @@ package com.example.wxspeaker
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
@@ -31,6 +32,15 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.btnAcc).setOnClickListener {
             Toast.makeText(this, "请在列表里找到「微信播报」打开", Toast.LENGTH_LONG).show()
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+
+        findViewById<Button>(R.id.btnOverlay).setOnClickListener {
+            try {
+                val i = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+                startActivity(i)
+            } catch (e: Exception) {
+                startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+            }
         }
 
         findViewById<Button>(R.id.btnStart).setOnClickListener {
@@ -74,6 +84,8 @@ class MainActivity : Activity() {
             append(if (isNotificationAccessGranted()) "已授权 ✅" else "未授权 ❌（点①）")
             append("\n无障碍(自动播语音)：")
             append(if (isAccessibilityEnabled()) "已开启 ✅" else "未开启 ❌（点②）")
+            append("\n悬浮窗：")
+            append(if (Settings.canDrawOverlays(this@MainActivity)) "已允许 ✅" else "未允许 ❌（点③）")
             append("\n播报开关：")
             append(if (Prefs.isEnabled(this@MainActivity)) "已开启 ✅" else "已关闭")
         }

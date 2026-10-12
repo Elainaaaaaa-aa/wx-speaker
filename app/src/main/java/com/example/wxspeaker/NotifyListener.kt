@@ -40,7 +40,6 @@ class NotifyListener : NotificationListenerService() {
 
         val core = text.replace(Regex("^\\[\\d+条\\]"), "")
 
-        // 去重
         val now = System.currentTimeMillis()
         val last = lastSpoken[title]
         if (last != null && last.first == core && now - last.second < DEDUP_MS) return
@@ -48,7 +47,7 @@ class NotifyListener : NotificationListenerService() {
 
         val who = if (title.isNotEmpty()) "$title，" else ""
 
-        // ① 语音消息：念一句 + 尝试自动打开微信播放
+        // ① 语音消息
         if (core.contains("[语音]") || text.contains("[语音]")) {
             Speaker.speak(who + "发来一条语音消息")
             autoPlayVoice(sbn)
@@ -87,7 +86,7 @@ class NotifyListener : NotificationListenerService() {
         }
         Thread {
             try {
-                Thread.sleep(2000) // 等微信打开并加载聊天
+                Thread.sleep(1500) // 等微信打开
                 VoicePlayer.instance?.playLatestVoice()
             } catch (e: Exception) {
             }

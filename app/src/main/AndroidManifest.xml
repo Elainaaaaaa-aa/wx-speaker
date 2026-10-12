@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- 悬浮窗权限：有了它，App 才能把微信弹到前台去点语音 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
     <!-- 安卓 11+ 要求：声明要用系统语音合成(TTS)引擎 -->
     <queries>
         <intent>
@@ -24,7 +27,6 @@
             </intent-filter>
         </activity>
 
-        <!-- 通知监听 -->
         <service
             android:name=".NotifyListener"
             android:exported="true"
@@ -35,7 +37,6 @@
             </intent-filter>
         </service>
 
-        <!-- 无障碍（用于自动点开微信语音条播放） -->
         <service
             android:name=".VoicePlayer"
             android:exported="true"

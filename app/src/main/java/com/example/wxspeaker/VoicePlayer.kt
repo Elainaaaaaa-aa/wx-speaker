@@ -5,9 +5,9 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
 /**
- * 无障碍服务：用来在微信里找到“最新的一条语音”并点开播放。
+ * 无障碍服务：在微信里找到“最新的一条语音”并点开播放。
  *
- * ⚠️ 微信更新后如果界面变了，可能失效 —— 需要调整的关键词都在 VOICE_KEYS 里。
+ * ⚠️ 微信更新后若界面变了可能失效 —— 要调的关键词在 VOICE_KEYS 里。
  */
 class VoicePlayer : AccessibilityService() {
 
@@ -16,9 +16,7 @@ class VoicePlayer : AccessibilityService() {
         instance = this
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // 本服务只在被主动调用时工作，不需要处理事件
-    }
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
 
     override fun onInterrupt() {}
 
@@ -27,28 +25,40 @@ class VoicePlayer : AccessibilityService() {
         super.onDestroy()
     }
 
-    /** 找到当前界面上最后（最新）的一条语音气泡并点击 */
+    /** 反复尝试：找当前界面上最后（最新）的语音气泡并点击 */
     fun playLatestVoice() {
-        try {
-            val root = rootInActiveWindow
-            if (root == null) {
-                LogStore.add(this, "语音播放：拿不到当前界面")
-                return
+        Thread {
+            for (attempt in 1..5) {
+                try {
+                    val root = rootInActiveWindow
+                    if (root == null) {
+                        LogStore.add(this, "语音播放[$attempt]：拿不到界面")
+                    } else {
+                        val pkg = root.packageName?.toString() ?: "?"
+                        val list = ArrayList<AccessibilityNodeInfo>()
+                        collect(root, list)
+                        LogStore.add(this, "语音播放[$attempt]：界面=" + pkg + "，候选气泡=" + list.size)
+                        if (list.isNotEmpty()) {
+                            clickNode(list[list.size - 1])
+                            return@Thread
+                        }
+                        if (attempt == 1) {
+                            val descs = ArrayList<String>()
+                            sampleDescs(root, descs)
+                            LogStore.add(this, "界面desc样本：" + descs.joinToString(" / "))
+                        }
+                    }
+                } catch (e: Exception) {
+                    LogStore.add(this, "语音播放异常：" + e)
+                }
+                try { Thread.sleep(1500) } catch (e: Exception) {}
             }
-            val list = ArrayList<AccessibilityNodeInfo>()
-            collect(root, list)
-            LogStore.add(this, "语音播放：找到候选气泡 " + list.size + " 个")
-            if (list.isEmpty()) return
-
-            val node = list[list.size - 1] // 最后一个 = 最新的
-            clickNode(node)
-        } catch (e: Exception) {
-            LogStore.add(this, "语音播放异常：" + e)
-        }
+            LogStore.add(this, "语音播放：多次尝试仍未找到语音气泡")
+        }.start()
     }
 
     private fun collect(node: AccessibilityNodeInfo?, out: MutableList<AccessibilityNodeInfo>) {
-        if (node == null) return
+        if (node == null || out.size > 200) return
         val d = node.contentDescription?.toString() ?: ""
         for (k in VOICE_KEYS) {
             if (d.contains(k)) {
@@ -61,7 +71,15 @@ class VoicePlayer : AccessibilityService() {
         }
     }
 
-    /** 节点本身不可点时，往上找可点的父节点 */
+    private fun sampleDescs(node: AccessibilityNodeInfo?, out: MutableList<String>) {
+        if (node == null || out.size >= 20) return
+        val d = node.contentDescription?.toString() ?: ""
+        if (d.isNotEmpty()) out.add(d)
+        for (i in 0 until node.childCount) {
+            sampleDescs(node.getChild(i), out)
+        }
+    }
+
     private fun clickNode(node: AccessibilityNodeInfo) {
         var n: AccessibilityNodeInfo? = node
         var depth = 0
