@@ -5,7 +5,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
 /**
- * 无障碍服务：在微信里找到“最新的一条语音”并点开播放。
+ * 无障碍服务：尝试在微信里找到“最新的一条语音”并点开播放。
  */
 class VoicePlayer : AccessibilityService() {
 
@@ -25,7 +25,7 @@ class VoicePlayer : AccessibilityService() {
 
     fun playLatestVoice() {
         Thread {
-            for (attempt in 1..5) {
+            for (attempt in 1..6) {
                 try {
                     val root = rootInActiveWindow
                     if (root == null) {
@@ -39,10 +39,13 @@ class VoicePlayer : AccessibilityService() {
                             clickNode(list[list.size - 1])
                             return@Thread
                         }
-                        if (attempt == 1) {
-                            val dump = ArrayList<String>()
-                            dumpNodes(root, dump)
-                            LogStore.add(this, "【界面结构】" + dump.joinToString("  ●  "))
+                        // 最后一次截图整个界面结构，方便定位
+                        if (attempt == 6) {
+                            val out = ArrayList<String>()
+                            val counter = intArrayOf(0)
+                            walk(root, out, counter)
+                            LogStore.add(this, "【界面结构·末次】总节点=" + counter[0] + "，文本节点=" + out.size)
+                            LogStore.add(this, "【结构明细】" + out.joinToString(" ● "))
                         }
                     }
                 } catch (e: Exception) {
@@ -69,17 +72,18 @@ class VoicePlayer : AccessibilityService() {
         }
     }
 
-    /** 把有文字/描述的节点全打出来： 类名|文字|描述 */
-    private fun dumpNodes(node: AccessibilityNodeInfo?, out: MutableList<String>) {
-        if (node == null || out.size >= 60) return
+    /** 遍历并统计/记录有文字或描述的节点： 类名|文字|描述 */
+    private fun walk(node: AccessibilityNodeInfo?, out: MutableList<String>, counter: IntArray) {
+        if (node == null || counter[0] > 600) return
+        counter[0]++
         val cls = node.className?.toString()?.substringAfterLast('.') ?: ""
         val t = node.text?.toString() ?: ""
         val d = node.contentDescription?.toString() ?: ""
         if (t.isNotEmpty() || d.isNotEmpty()) {
-            out.add(cls + "|" + t + "|" + d)
+            if (out.size < 80) out.add(cls + "|" + t + "|" + d)
         }
         for (i in 0 until node.childCount) {
-            dumpNodes(node.getChild(i), out)
+            walk(node.getChild(i), out, counter)
         }
     }
 
@@ -97,8 +101,6 @@ class VoicePlayer : AccessibilityService() {
 
     companion object {
         @Volatile var instance: VoicePlayer? = null
-
-        // 语音气泡的关键词（微信更新后可能要改这里）
         private val VOICE_KEYS = arrayOf("语音", "Voice")
     }
 }
