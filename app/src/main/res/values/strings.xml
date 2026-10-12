@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">微信播报</string>
+    <string name="acc_desc">用于自动打开微信并点开语音消息播放</string>
 </resources>

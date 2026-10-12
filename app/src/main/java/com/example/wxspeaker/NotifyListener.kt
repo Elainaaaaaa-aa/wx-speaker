@@ -5,7 +5,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 
 /**
- * 监听系统通知：只处理微信，把消息朗读出来。
+ * 监听系统通知：只处理微信，把消息朗读出来；语音消息尝试自动打开微信播放。
  */
 class NotifyListener : NotificationListenerService() {
 
@@ -22,7 +22,6 @@ class NotifyListener : NotificationListenerService() {
             val ex = sbn.notification.extras
             val t = ex.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
             val x = ex.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
-            // 调试：记录收到的通知（保存在本地，方便在 App 界面里查看）
             LogStore.add(this, sbn.packageName + " ｜ " + t + " ｜ " + x)
             handle(sbn)
         } catch (e: Exception) {
@@ -39,7 +38,6 @@ class NotifyListener : NotificationListenerService() {
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
         if (text.isEmpty()) return
 
-        // 去掉“[N条]”前缀
         val core = text.replace(Regex("^\\[\\d+条\\]"), "")
 
         // 去重
@@ -50,13 +48,13 @@ class NotifyListener : NotificationListenerService() {
 
         val who = if (title.isNotEmpty()) "$title，" else ""
 
-        // ① 语音消息
+        // ① 语音消息：念一句 + 尝试自动打开微信播放
         if (core.contains("[语音]") || text.contains("[语音]")) {
             Speaker.speak(who + "发来一条语音消息")
+            autoPlayVoice(sbn)
             return
         }
 
-        // 拆出正文
         val m = Regex("^([^:：]{1,24})[:：]([\\s\\S]*)$").find(core)
         val content = m?.groupValues?.get(2) ?: core
         val alreadyNamed = (m != null && m.groupValues[1] == title)
@@ -73,6 +71,27 @@ class NotifyListener : NotificationListenerService() {
         var shown = if (alreadyNamed) content else core
         if (isPunctOnly(shown)) shown = punctToSpeech(shown)
         Speaker.speak(who + shown)
+    }
+
+    /** 用通知自带的入口打开微信对应聊天，再让无障碍点开最新语音 */
+    private fun autoPlayVoice(sbn: StatusBarNotification) {
+        if (VoicePlayer.instance == null) {
+            LogStore.add(this, "语音自动播放：无障碍未开启，跳过")
+            return
+        }
+        try {
+            sbn.notification.contentIntent?.send()
+            LogStore.add(this, "语音自动播放：已请求打开微信")
+        } catch (e: Exception) {
+            LogStore.add(this, "语音自动播放：打开微信失败 " + e)
+        }
+        Thread {
+            try {
+                Thread.sleep(2000) // 等微信打开并加载聊天
+                VoicePlayer.instance?.playLatestVoice()
+            } catch (e: Exception) {
+            }
+        }.start()
     }
 
     companion object {

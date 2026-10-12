@@ -24,15 +24,22 @@
         android:id="@+id/btnPerm"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:text="① 开启「通知使用权」" />
+
+    <Button
+        android:id="@+id/btnAcc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="② 开启「无障碍」（自动播语音用）" />
 
     <Button
         android:id="@+id/btnStart"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="② 开始播报" />
+        android:text="开始播报" />
 
     <Button
         android:id="@+id/btnStop"
@@ -49,18 +56,27 @@
         android:text="测试语音（点一下，应听到声音）" />
 
     <TextView
+        android:id="@+id/ttsText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textSize="12sp"
+        android:textColor="#B00020"
+        android:text="TTS状态：--" />
+
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="8dp"
         android:textSize="13sp"
         android:textColor="#666666"
-        android:text="最近收到的通知（调试用，截图给我）:" />
+        android:text="最近收到的通知（调试用）:" />
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="4dp">
 
         <TextView
             android:id="@+id/logText"

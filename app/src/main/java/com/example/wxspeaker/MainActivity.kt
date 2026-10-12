@@ -13,6 +13,7 @@ class MainActivity : Activity() {
 
     private lateinit var statusText: TextView
     private lateinit var logText: TextView
+    private lateinit var ttsText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,10 +21,16 @@ class MainActivity : Activity() {
 
         statusText = findViewById(R.id.statusText)
         logText = findViewById(R.id.logText)
+        ttsText = findViewById(R.id.ttsText)
         Speaker.init(this)
 
         findViewById<Button>(R.id.btnPerm).setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
+
+        findViewById<Button>(R.id.btnAcc).setOnClickListener {
+            Toast.makeText(this, "请在列表里找到「微信播报」打开", Toast.LENGTH_LONG).show()
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
 
         findViewById<Button>(R.id.btnStart).setOnClickListener {
@@ -43,9 +50,9 @@ class MainActivity : Activity() {
             Speaker.init(this)
             Speaker.speak("测试，微信播报已开启")
             Toast.makeText(this, "已发出测试语音，听到了吗？", Toast.LENGTH_SHORT).show()
+            updateStatus()
         }
 
-        // 打开 App 即自动开启播报
         Prefs.setEnabled(this, true)
     }
 
@@ -57,20 +64,20 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // 把 App 从后台划掉 → 停止播报
         Prefs.setEnabled(this, false)
         Speaker.stop()
     }
 
     private fun updateStatus() {
-        val granted = isNotificationAccessGranted()
-        val enabled = Prefs.isEnabled(this)
         statusText.text = buildString {
             append("通知使用权：")
-            append(if (granted) "已授权 ✅" else "未授权 ❌ （请点下面第①个按钮）")
+            append(if (isNotificationAccessGranted()) "已授权 ✅" else "未授权 ❌（点①）")
+            append("\n无障碍(自动播语音)：")
+            append(if (isAccessibilityEnabled()) "已开启 ✅" else "未开启 ❌（点②）")
             append("\n播报开关：")
-            append(if (enabled) "已开启 ✅" else "已关闭")
+            append(if (Prefs.isEnabled(this@MainActivity)) "已开启 ✅" else "已关闭")
         }
+        ttsText.text = Speaker.statusText()
     }
 
     private fun refreshLog() {
@@ -81,6 +88,12 @@ class MainActivity : Activity() {
     private fun isNotificationAccessGranted(): Boolean {
         val cn = ComponentName(this, NotifyListener::class.java)
         val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
+        return flat != null && flat.contains(cn.flattenToString())
+    }
+
+    private fun isAccessibilityEnabled(): Boolean {
+        val cn = ComponentName(this, VoicePlayer::class.java)
+        val flat = Settings.Secure.getString(contentResolver, "enabled_accessibility_services")
         return flat != null && flat.contains(cn.flattenToString())
     }
 }
