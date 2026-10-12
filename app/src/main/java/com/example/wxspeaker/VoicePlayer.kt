@@ -6,8 +6,6 @@ import android.view.accessibility.AccessibilityNodeInfo
 
 /**
  * 无障碍服务：在微信里找到“最新的一条语音”并点开播放。
- *
- * ⚠️ 微信更新后若界面变了可能失效 —— 要调的关键词在 VOICE_KEYS 里。
  */
 class VoicePlayer : AccessibilityService() {
 
@@ -25,7 +23,6 @@ class VoicePlayer : AccessibilityService() {
         super.onDestroy()
     }
 
-    /** 反复尝试：找当前界面上最后（最新）的语音气泡并点击 */
     fun playLatestVoice() {
         Thread {
             for (attempt in 1..5) {
@@ -43,25 +40,26 @@ class VoicePlayer : AccessibilityService() {
                             return@Thread
                         }
                         if (attempt == 1) {
-                            val descs = ArrayList<String>()
-                            sampleDescs(root, descs)
-                            LogStore.add(this, "界面desc样本：" + descs.joinToString(" / "))
+                            val dump = ArrayList<String>()
+                            dumpNodes(root, dump)
+                            LogStore.add(this, "【界面结构】" + dump.joinToString("  ●  "))
                         }
                     }
                 } catch (e: Exception) {
                     LogStore.add(this, "语音播放异常：" + e)
                 }
-                try { Thread.sleep(1500) } catch (e: Exception) {}
+                try { Thread.sleep(1200) } catch (e: Exception) {}
             }
             LogStore.add(this, "语音播放：多次尝试仍未找到语音气泡")
         }.start()
     }
 
     private fun collect(node: AccessibilityNodeInfo?, out: MutableList<AccessibilityNodeInfo>) {
-        if (node == null || out.size > 200) return
+        if (node == null || out.size > 300) return
         val d = node.contentDescription?.toString() ?: ""
+        val t = node.text?.toString() ?: ""
         for (k in VOICE_KEYS) {
-            if (d.contains(k)) {
+            if (d.contains(k) || t.contains(k)) {
                 out.add(node)
                 break
             }
@@ -71,12 +69,17 @@ class VoicePlayer : AccessibilityService() {
         }
     }
 
-    private fun sampleDescs(node: AccessibilityNodeInfo?, out: MutableList<String>) {
-        if (node == null || out.size >= 20) return
+    /** 把有文字/描述的节点全打出来： 类名|文字|描述 */
+    private fun dumpNodes(node: AccessibilityNodeInfo?, out: MutableList<String>) {
+        if (node == null || out.size >= 60) return
+        val cls = node.className?.toString()?.substringAfterLast('.') ?: ""
+        val t = node.text?.toString() ?: ""
         val d = node.contentDescription?.toString() ?: ""
-        if (d.isNotEmpty()) out.add(d)
+        if (t.isNotEmpty() || d.isNotEmpty()) {
+            out.add(cls + "|" + t + "|" + d)
+        }
         for (i in 0 until node.childCount) {
-            sampleDescs(node.getChild(i), out)
+            dumpNodes(node.getChild(i), out)
         }
     }
 
@@ -95,7 +98,7 @@ class VoicePlayer : AccessibilityService() {
     companion object {
         @Volatile var instance: VoicePlayer? = null
 
-        // 语音气泡的无障碍描述关键词（微信更新后可能要改这里）
+        // 语音气泡的关键词（微信更新后可能要改这里）
         private val VOICE_KEYS = arrayOf("语音", "Voice")
     }
 }

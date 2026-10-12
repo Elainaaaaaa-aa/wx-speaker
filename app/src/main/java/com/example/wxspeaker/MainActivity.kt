@@ -36,8 +36,7 @@ class MainActivity : Activity() {
 
         findViewById<Button>(R.id.btnOverlay).setOnClickListener {
             try {
-                val i = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-                startActivity(i)
+                startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
             } catch (e: Exception) {
                 startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
             }
@@ -104,8 +103,8 @@ class MainActivity : Activity() {
     }
 
     private fun isAccessibilityEnabled(): Boolean {
-        val cn = ComponentName(this, VoicePlayer::class.java)
-        val flat = Settings.Secure.getString(contentResolver, "enabled_accessibility_services")
-        return flat != null && flat.contains(cn.flattenToString())
+        val flat = Settings.Secure.getString(contentResolver, "enabled_accessibility_services") ?: return false
+        return flat.contains("$packageName/${VoicePlayer::class.java.name}") ||
+                flat.contains("$packageName/.VoicePlayer")
     }
 }
